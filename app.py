@@ -63,21 +63,30 @@ def render_sidebar():
     """Render sidebar and return model parameters"""
     with st.sidebar:
         # Model selection
+        model_keys = list(MODELS.keys())
+        default_model_index = model_keys.index("Claude 4 Sonnet")
         model_name = st.selectbox(
             "Select Model",
-            list(MODELS.keys()),
+            model_keys,
+            index=default_model_index,
             key=f"{st.session_state.get('widget_key', 'default')}_model"
         )
         
         # Role selection
+        role_keys = ["Custom"] + list(ROLE_PROMPTS.keys())
+        default_role_index = role_keys.index("Default")
         role = st.selectbox(
             "Select Role",
-            ["Custom"] + list(ROLE_PROMPTS.keys()),
+            role_keys,
+            index=default_role_index,
             key=f"{st.session_state.get('widget_key', 'default')}_role"
         )
         
         # System prompt
-        default_prompt = "" if role == "Custom" else ROLE_PROMPTS.get(role, "")
+        if model_name == "Claude 4 Sonnet" and role == "Default":
+            default_prompt = "You are a helpful, thoughtful, and knowledgeable assistant. Your job is to carefully analyze the user's questions, understand their underlying needs, and provide clear, accurate, and useful answers. You always ask clarifying questions if something is ambiguous, and you aim to make complex topics easy to understand. Your responses should be practical, well-structured, and tailored to the user's context whenever possible.\n\nStay professional but friendly, and ensure that your explanations are grounded in facts and logic. If a task requires multiple steps, break it down clearly. When appropriate, offer examples, comparisons, or step-by-step instructions to enhance clarity and usefulness."
+        else:
+            default_prompt = "" if role == "Custom" else ROLE_PROMPTS.get(role, "")
         system_prompt = st.text_area(
             "System Prompt",
             value=default_prompt,
@@ -126,7 +135,7 @@ def render_sidebar():
             )
         
         # New chat button
-        if st.button("➕ New Chat", type="primary", use_container_width=True):
+        if st.button("New Chat", type="primary", use_container_width=True):
             new_chat()
             st.rerun()
     
@@ -228,8 +237,8 @@ def init_conversation(system_prompt: str, chat_model: ChatModel):
     if "messages" not in st.session_state:
         st.session_state.messages = [{
             "role": "assistant",
-            "content": "Hello! I'm your Bedrock AI assistant. How can I help you today?",
-            "llm_content": "Hello! I'm your Bedrock AI assistant. How can I help you today?"
+            "content": "Hello! I'm your AWS Bedrock AI assistant. How can I help you today?",
+            "llm_content": "Hello! I'm your AWS Bedrock AI assistant. How can I help you today?"
         }]
     
     if "current_llm_text" not in st.session_state:
@@ -276,8 +285,8 @@ def new_chat():
     """Start new chat"""
     st.session_state["messages"] = [{
         "role": "assistant",
-        "content": "Hello! I'm your Bedrock AI assistant. How can I help you today?",
-        "llm_content": "Hello! I'm your Bedrock AI assistant. How can I help you today?"
+        "content": "Hello! I'm your AWS Bedrock AI assistant. How can I help you today?",
+        "llm_content": "Hello! I'm your AWS Bedrock AI assistant. How can I help you today?"
     }]
     
     if "msgs" in st.session_state:
