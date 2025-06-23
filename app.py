@@ -52,11 +52,11 @@ class ChatModel:
 def set_page_config():
     """Set Streamlit page configuration"""
     st.set_page_config(
-        page_title="🤖 Bedrock ChatBot",
+        page_title="AWS Bedrock ChatBot",
         layout="wide",
         page_icon="🤖"
     )
-    st.title("🤖 Bedrock ChatBot")
+    st.title("AWS Bedrock ChatBot")
 
 
 def render_sidebar():
@@ -126,7 +126,7 @@ def render_sidebar():
             )
         
         # New chat button
-        if st.button("🆕 New Chat", type="primary", use_container_width=True):
+        if st.button("➕ New Chat", type="primary", use_container_width=True):
             new_chat()
             st.rerun()
     
