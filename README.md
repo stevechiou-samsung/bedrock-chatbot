@@ -24,15 +24,34 @@ cd simple-bedrock-chatbot
 pip install -r requirements.txt
 ```
 
-### 3. Set up environment variables
-Create a `.env` file and add the following content:
-```env
-AWS_ACCESS_KEY_ID=your_access_key
-AWS_SECRET_ACCESS_KEY=your_secret_key
-AWS_DEFAULT_REGION=us-east-1
-```
+### 3. Authenticate with AWS using saml2aws
+This project assumes you use [saml2aws](https://github.com/Versent/saml2aws) (with KeyCloak or other IdP) to obtain temporary AWS credentials.
 
-### 4. Configure AWS Bedrock permissions
+1. Install saml2aws (see [official guide](https://github.com/Versent/saml2aws#installation))
+2. Configure your profile (first time only):
+   ```bash
+   saml2aws configure
+   ```
+3. Login and get credentials:
+   ```bash
+   saml2aws login
+   ```
+   This will write temporary credentials to `~/.aws/credentials`.
+
+> **Note:** You do NOT need to set AWS_ACCESS_KEY_ID or AWS_SECRET_ACCESS_KEY in a `.env` file. The application will use the credentials from your AWS CLI profile.
+
+### 4. (Optional) Set AWS region
+If you need to specify a region, you can either:
+- Set the environment variable:
+  ```bash
+  export AWS_DEFAULT_REGION=us-east-1
+  ```
+- Or add it to a `.env` file (optional, only for region):
+  ```env
+  AWS_DEFAULT_REGION=us-east-1
+  ```
+
+### 5. Configure AWS Bedrock permissions
 Ensure your AWS account has permissions to access Bedrock services and has enabled the required models.
 
 ## 🚀 Run the application
@@ -48,8 +67,9 @@ The application will start at `http://localhost:8501`.
 ```
 simple-bedrock-chatbot/
 ├── app.py              # Main application file
+├── models.py           # Model configurations
 ├── requirements.txt    # Python dependencies
-└── README.md          # Project documentation
+└── README.md           # Project documentation
 ```
 
 ## 🎯 How to Use
@@ -63,7 +83,7 @@ simple-bedrock-chatbot/
 ## 🔧 Customization
 
 ### Adding New Models
-Add new model configurations to the `MODELS` dictionary in `app.py`:
+Add new model configurations to the `MODELS` dictionary in `models.py`:
 
 ```python
 MODELS = {
@@ -78,7 +98,7 @@ MODELS = {
 ```
 
 ### Adding New Roles
-Add new role prompts to the `ROLE_PROMPTS` dictionary:
+Add new role prompts to the `ROLE_PROMPTS` dictionary in `app.py`:
 
 ```python
 ROLE_PROMPTS = {
@@ -88,7 +108,7 @@ ROLE_PROMPTS = {
 
 ## 📝 Notes
 
-- Ensure AWS credentials are properly configured
+- Make sure to use `saml2aws login` before running the app to ensure valid AWS credentials.
 - Bedrock services may have usage limits and costs
 - Recommended to use appropriate security measures in production
 

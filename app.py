@@ -9,11 +9,11 @@ from langchain_core.runnables import RunnableWithMessageHistory
 from langchain.prompts.chat import ChatPromptTemplate, MessagesPlaceholder
 from langchain_community.chat_message_histories import StreamlitChatMessageHistory
 from langchain_aws import ChatBedrockConverse
-from dotenv import load_dotenv
 from models import MODELS  # <--- import MODELS here
 
-# Load environment variables
-load_dotenv()
+# AWS credentials are expected to be set by saml2aws (in ~/.aws/credentials)
+# Optionally, you can set AWS_DEFAULT_REGION in your environment or .env file
+# If you want to support .env for other custom config, you can use dotenv, but not for AWS keys
 
 # Role prompts
 ROLE_PROMPTS = {
