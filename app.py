@@ -10,49 +10,16 @@ from langchain.prompts.chat import ChatPromptTemplate, MessagesPlaceholder
 from langchain_community.chat_message_histories import StreamlitChatMessageHistory
 from langchain_aws import ChatBedrockConverse
 from dotenv import load_dotenv
+from models import MODELS  # <--- import MODELS here
 
 # Load environment variables
 load_dotenv()
-
-# Model configurations
-MODELS = {
-    "Claude 3.5 Haiku": {
-        "model_id": "anthropic.claude-3-5-haiku-20241022-v1:0",
-        "temperature": 1.0,
-        "top_p": 1.0,
-        "top_k": 500,
-        "max_tokens": 4096,
-    },
-    "Claude 3.7 Sonnet": {
-        "model_id": "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
-        "temperature": 1.0,
-        "top_p": 1.0,
-        "top_k": 500,
-        "max_tokens": 64000,
-    },
-    "Claude 4 Sonnet": {
-        "model_id": "us.anthropic.claude-sonnet-4-20250514-v1:0",
-        "temperature": 1.0,
-        "top_p": 1.0,
-        "top_k": 500,
-        "max_tokens": 32000,
-    }
-}
 
 # Role prompts
 ROLE_PROMPTS = {
     "Default": "You are a helpful AI assistant, eager to help users solve problems.",
     "Translator": "You are a professional translator. Please identify the source language and translate to the target language while preserving meaning, tone, and nuance. Ensure proper grammar and formatting.",
-    "Writing Assistant": """You are an AI writing assistant. Your task is to improve written content by:
-1. Fixing grammar, punctuation, spelling, and style issues
-2. Providing specific improvement suggestions
-3. Offering better word choices and phrasing
-4. Ensuring consistent tone and voice
-5. Improving flow and organization
-6. Providing overall feedback
-7. Outputting a fully edited version
-
-Keep feedback constructive and insightful."""
+    "Writing Assistant": """You are an AI writing assistant. Your task is to improve written content by:\n1. Fixing grammar, punctuation, spelling, and style issues\n2. Providing specific improvement suggestions\n3. Offering better word choices and phrasing\n4. Ensuring consistent tone and voice\n5. Improving flow and organization\n6. Providing overall feedback\n7. Outputting a fully edited version\n\nKeep feedback constructive and insightful."""
 }
 
 @dataclass
