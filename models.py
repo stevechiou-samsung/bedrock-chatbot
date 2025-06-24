@@ -2,8 +2,8 @@
 # Model configurations for Bedrock ChatBot
 
 MODELS = {
-    "Claude 3.5 Haiku": {
-        "model_id": "anthropic.claude-3-5-haiku-20241022-v1:0",
+    "Claude 3.5 Sonnet": {
+        "model_id": "anthropic.claude-3-5-sonnet-20241022-v1:0",
         "temperature": 1.0,
         "top_p": 1.0,
         "top_k": 500,
