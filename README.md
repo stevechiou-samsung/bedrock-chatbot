@@ -2,6 +2,8 @@
 
 A streamlined chat bot based on AWS Bedrock, built with Streamlit and LangChain.
 
+![Demo](demo.png)
+
 ## ✨ Features
 
 - 🚀 **Multi-Model Support**: Supports Claude 3.5 Haiku, Claude 3.7 Sonnet, and Claude 4 Sonnet
@@ -19,12 +21,35 @@ git clone <your-repo-url>
 cd simple-bedrock-chatbot
 ```
 
-### 2. Install dependencies
+### 2. Install uv (Python package manager)
+[uv](https://docs.astral.sh/uv/) is a fast Python package installer and resolver, written in Rust.
+
+**On macOS:**
 ```bash
-pip install -r requirements.txt
+brew install uv
 ```
 
-### 3. Authenticate with AWS using saml2aws
+**On Linux/Windows:**
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+**Or using pip:**
+```bash
+pip install uv
+```
+
+### 3. Install dependencies
+```bash
+uv sync
+```
+
+If this is your first time setting up the project, you may need to initialize it:
+```bash
+uv init --no-readme
+```
+
+### 4. Authenticate with AWS using saml2aws
 This project assumes you use [saml2aws](https://github.com/Versent/saml2aws) (with KeyCloak or other IdP) to obtain temporary AWS credentials.
 
 1. Install saml2aws (see [official guide](https://github.com/Versent/saml2aws#installation))
@@ -40,7 +65,7 @@ This project assumes you use [saml2aws](https://github.com/Versent/saml2aws) (wi
 
 > **Note:** You do NOT need to set AWS_ACCESS_KEY_ID or AWS_SECRET_ACCESS_KEY in a `.env` file. The application will use the credentials from your AWS CLI profile.
 
-### 4. (Optional) Set AWS region
+### 5. (Optional) Set AWS region
 If you need to specify a region, you can either:
 - Set the environment variable:
   ```bash
@@ -51,7 +76,7 @@ If you need to specify a region, you can either:
   AWS_DEFAULT_REGION=us-east-1
   ```
 
-### 5. Configure AWS Bedrock permissions
+### 6. Configure AWS Bedrock permissions
 Ensure your AWS account has permissions to access Bedrock services and has enabled the required models.
 
 ## 🚀 Run the application
