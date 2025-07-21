@@ -40,14 +40,32 @@ pip install uv
 ```
 
 ### 3. Install dependencies
+
+**Option 1: Using uv (recommended)**
 ```bash
-uv sync
+# Create virtual environment using system Python
+uv venv
+# Activate the virtual environment
+source .venv/bin/activate  # On macOS/Linux
+# or
+.venv\Scripts\activate     # On Windows
+# Install dependencies
+uv pip install -r requirements.txt
 ```
 
-If this is your first time setting up the project, you may need to initialize it:
+**Option 2: Using pip (fallback)**
 ```bash
-uv init --no-readme
+# Create virtual environment
+python -m venv .venv
+# Activate the virtual environment
+source .venv/bin/activate  # On macOS/Linux
+# or
+.venv\Scripts\activate     # On Windows
+# Install dependencies
+pip install -r requirements.txt
 ```
+
+> **Note:** If you encounter certificate or network issues with uv, use Option 2 with pip instead.
 
 ### 4. Authenticate with AWS using saml2aws
 This project assumes you use [saml2aws](https://github.com/Versent/saml2aws) (with KeyCloak or other IdP) to obtain temporary AWS credentials.
