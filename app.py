@@ -3,12 +3,14 @@ import random
 import re
 from typing import Dict, Any, List, Union
 from dataclasses import dataclass
+import boto3
 
 import streamlit as st
 from langchain_core.runnables import RunnableWithMessageHistory
 from langchain.prompts.chat import ChatPromptTemplate, MessagesPlaceholder
 from langchain_community.chat_message_histories import StreamlitChatMessageHistory
 from langchain_aws import ChatBedrockConverse
+from langchain_aws.retrievers import AmazonKendraRetriever
 from models import MODELS  # <--- import MODELS here
 
 # AWS credentials are expected to be set by saml2aws (in ~/.aws/credentials)
@@ -211,6 +213,22 @@ Keep feedback constructive and insightful.""",
         What writing project can I help you improve?
         """
     },
+    "AdWise": {
+        "prompt": "You are AdWise, Samsung Ads' helpful Chatbot, designed to provide accurate and reliable answers to users' questions related to ads. Always consider the context of Samsung Ads when responding, as your audience may include customers, engineers, program managers, salespeople, or other employees. When crafting responses: Maintain a polite and professional tone. Offer concise yet detailed information relevant to the query. Structure your answers clearly and logically for easy understanding. If the provided references do not directly answer a question, respond by requesting additional details or clarification: \"Based on the available information, I don't have enough to answer that. Could you please provide more context or specifics?\" Seeking further information is encouraged and seen as a positive approach to ensuring accurate responses.",
+        "greeting": """
+        🎯 Welcome to AdWise - Samsung Ads Assistant!
+        
+        I'm AdWise, your specialized Samsung Ads assistant, ready to help with:
+        • 📊 Advertising campaign strategies and insights
+        • 🎯 Samsung Ads platform guidance
+        • 💼 Business solutions and recommendations
+        • 🔍 Product information and specifications
+        • 📈 Performance optimization tips
+        • 🤝 Customer support and troubleshooting
+        
+        I use Samsung's internal knowledge base to provide accurate, up-to-date information. How can I assist you today?
+        """
+    },
     "Custom": {
         "prompt": "",
         "greeting": """
@@ -231,6 +249,56 @@ Keep feedback constructive and insightful.""",
 
 # Backward compatibility - extract prompts for existing code
 ROLE_PROMPTS = {role: config["prompt"] for role, config in ROLE_CONFIG.items()}
+
+# Kendra configuration
+KENDRA_INDEX_ID = '3d5278e5-7be2-4cf5-83ca-429d4bf16ff6'
+
+def initialize_kendra_retriever():
+    """Initialize Kendra retriever with the specified index"""
+    try:
+        # Create boto3 client with SSL verification disabled for corporate environments
+        kendra_client = boto3.client(
+            'kendra',
+            region_name=os.getenv("AWS_DEFAULT_REGION", "us-east-1"),
+            verify=False  # Disable SSL verification for corporate environments
+        )
+        
+        retriever = AmazonKendraRetriever(
+            index_id=KENDRA_INDEX_ID,
+            region_name=os.getenv("AWS_DEFAULT_REGION", "us-east-1"),
+            top_k=5,
+            min_score_confidence=0.5,
+            return_source_documents=True,
+            client=kendra_client
+        )
+        return retriever
+    except Exception as e:
+        st.error(f"Failed to initialize Kendra retriever: {str(e)}")
+        return None
+
+def retrieve_kendra_context(query: str, retriever) -> str:
+    """Retrieve relevant context from Kendra for AdWise queries"""
+    if not retriever:
+        return ""
+    
+    try:
+        # Get relevant documents from Kendra
+        docs = retriever.get_relevant_documents(query)
+        
+        if not docs:
+            return ""
+        
+        # Format the context from retrieved documents
+        context_parts = []
+        for i, doc in enumerate(docs[:3]):  # Use top 3 results
+            content = doc.page_content.strip()
+            if content:
+                context_parts.append(f"Reference {i+1}: {content}")
+        
+        return "\n\n".join(context_parts) if context_parts else ""
+    except Exception as e:
+        st.error(f"Error retrieving from Kendra: {str(e)}")
+        return ""
 
 
 def get_role_greeting(role_name: str) -> str:
@@ -528,6 +596,7 @@ def render_sidebar():
             "Ad Operations Expert": {"icon": "⚙️", "label": "Ad Ops", "color": "#6f42c1"},
             "TensorFlow Expert": {"icon": "🧠", "label": "TensorFlow", "color": "#fd7e14"},
             "Snowflake SQL Expert": {"icon": "🗄️", "label": "Snowflake", "color": "#20c997"},
+            "AdWise": {"icon": "🎯", "label": "AdWise", "color": "#ff6b35"},
             "Translator": {"icon": "🌐", "label": "Translator", "color": "#6c757d"},
             "Writing Assistant": {"icon": "✍️", "label": "Writing", "color": "#e83e8c"},
             "Custom": {"icon": "🎨", "label": "Custom", "color": "#17a2b8"}
@@ -818,7 +887,33 @@ def generate_response(conversation, user_input: str):
     
     # Clean input
     clean_input = re.sub(r'```thinking.*?```', '', user_input, flags=re.DOTALL)
-    formatted_input = [{"role": "user", "content": clean_input}]
+    
+    # For AdWise role, enhance the input with Kendra retrieval
+    current_role = st.session_state.get("selected_role", "Default")
+    if current_role == "AdWise":
+        # Initialize Kendra retriever if not already done
+        if "kendra_retriever" not in st.session_state:
+            st.session_state.kendra_retriever = initialize_kendra_retriever()
+        
+        # Get relevant context from Kendra
+        kendra_context = retrieve_kendra_context(clean_input, st.session_state.kendra_retriever)
+        
+        if kendra_context:
+            # Enhance the input with retrieved context
+            enhanced_input = f"""Based on the following context from Samsung Ads knowledge base, please answer the user's question:
+
+CONTEXT:
+{kendra_context}
+
+USER QUESTION:
+{clean_input}
+
+Please provide a helpful response based on the context above. If the context doesn't contain enough information to answer the question, please say so and ask for clarification."""
+            formatted_input = [{"role": "user", "content": enhanced_input}]
+        else:
+            formatted_input = [{"role": "user", "content": clean_input}]
+    else:
+        formatted_input = [{"role": "user", "content": clean_input}]
     
     # Stream response
     return st.write_stream(
