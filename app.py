@@ -251,7 +251,7 @@ Keep feedback constructive and insightful.""",
 ROLE_PROMPTS = {role: config["prompt"] for role, config in ROLE_CONFIG.items()}
 
 # Kendra configuration
-KENDRA_INDEX_ID = '3d5278e5-7be2-4cf5-83ca-429d4bf16ff6'
+KENDRA_INDEX_ID = os.getenv("KENDRA_INDEX_ID")
 
 def initialize_kendra_retriever():
     """Initialize Kendra retriever with the specified index"""
