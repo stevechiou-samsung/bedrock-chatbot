@@ -10,6 +10,8 @@ from langchain.prompts.chat import ChatPromptTemplate, MessagesPlaceholder
 from langchain_community.chat_message_histories import StreamlitChatMessageHistory
 from langchain_aws import ChatBedrockConverse
 from models import MODELS  # <--- import MODELS here
+from chat_history_ui import render_chat_history_sidebar, save_current_session
+from app_sidebar import render_sidebar
 
 # AWS credentials are expected to be set by saml2aws (in ~/.aws/credentials)
 # Optionally, you can set AWS_DEFAULT_REGION in your environment or .env file
@@ -278,9 +280,25 @@ def set_page_config():
     <style>
     /* Main container styling */
     .main .block-container {
-        padding-top: 2rem;
+        padding-top: 1rem;
         padding-bottom: 2rem;
-        max-width: 1200px;
+        max-width: 1400px;
+    }
+    
+    /* Layout improvements */
+    .main-content {
+        max-width: 100%;
+        padding: 0;
+    }
+    
+    .chat-container {
+        background: rgba(255, 255, 255, 0.8);
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
     }
     
     /* Header styling */
@@ -331,6 +349,67 @@ def set_page_config():
     /* Sidebar styling */
     .css-1d391kg {
         background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
+        width: 400px !important;
+        max-height: 100vh;
+        overflow-y: auto;
+    }
+    
+    /* Sidebar sections */
+    .sidebar-section {
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    }
+    
+    .sidebar-section:last-child {
+        border-bottom: none;
+    }
+    
+    /* Session item styling */
+    .session-item {
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 8px;
+        padding: 10px;
+        margin: 5px 0;
+        border: 1px solid #e9ecef;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .session-item:hover {
+        background: rgba(74, 144, 226, 0.1);
+        border-color: #4a90e2;
+        transform: translateX(2px);
+    }
+    
+    .session-item.current {
+        background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+        color: white;
+        border-color: #357abd;
+    }
+    
+    /* Compact metrics */
+    .metric-card {
+        background: white;
+        border-radius: 8px;
+        padding: 8px 12px;
+        text-align: center;
+        border: 1px solid #e9ecef;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+    
+    .metric-number {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: #4a90e2;
+        margin-bottom: 2px;
+    }
+    
+    .metric-label {
+        font-size: 0.75rem;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
     
     .stSidebar .stSelectbox > div > div {
@@ -480,219 +559,6 @@ def set_page_config():
     """, unsafe_allow_html=True)
 
 
-def render_sidebar():
-    """Render sidebar and return model parameters"""
-    with st.sidebar:
-        # Sidebar header
-        st.markdown("""
-        <div class="sidebar-header">
-            🎯 Model Configuration
-        </div>
-        """, unsafe_allow_html=True)
-        # Model selection with icon
-        st.markdown("#### 🤖 AI Model")
-        model_keys = list(MODELS.keys())
-        default_model_index = model_keys.index("Claude 4 Sonnet")
-        model_name = st.selectbox(
-            "Choose your AI model",
-            model_keys,
-            index=default_model_index,
-            key=f"{st.session_state.get('widget_key', 'default')}_model",
-            help="Select the Claude model for your conversation"
-        )
-        
-        # Display model info in a clean card
-        model_info = MODELS[model_name]
-        st.markdown(f"""
-        <div class="parameter-section">
-            <div class="parameter-label">📋 Model Information</div>
-            <div class="parameter-value">
-                • Max Tokens: {model_info['max_tokens']:,}<br>
-                • Model ID: {model_info['model_id'].split('.')[-1]}
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # Role selection with elegant buttons
-        st.markdown("#### 🎭 AI Role")
-        
-        # Initialize role in session state if not exists
-        if "selected_role" not in st.session_state:
-            st.session_state.selected_role = "Default"
-        
-        # Role button configuration with icons and short labels
-        role_config = {
-            "Default": {"icon": "🤖", "label": "Default", "color": "#4a90e2"},
-            "AdTech Strategist": {"icon": "📊", "label": "AdTech", "color": "#28a745"},
-            "Performance Analyst": {"icon": "📈", "label": "Analytics", "color": "#dc3545"},
-            "Ad Operations Expert": {"icon": "⚙️", "label": "Ad Ops", "color": "#6f42c1"},
-            "TensorFlow Expert": {"icon": "🧠", "label": "TensorFlow", "color": "#fd7e14"},
-            "Snowflake SQL Expert": {"icon": "🗄️", "label": "Snowflake", "color": "#20c997"},
-            "Translator": {"icon": "🌐", "label": "Translator", "color": "#6c757d"},
-            "Writing Assistant": {"icon": "✍️", "label": "Writing", "color": "#e83e8c"},
-            "Custom": {"icon": "🎨", "label": "Custom", "color": "#17a2b8"}
-        }
-        
-        # Add CSS for consistent button styling
-        st.markdown("""
-        <style>
-        .role-button {
-            display: inline-block;
-            width: 100%;
-            min-height: 50px;
-            margin: 2px 0;
-            text-align: center;
-            border-radius: 8px;
-            border: 1px solid #e9ecef;
-            background: rgba(255, 255, 255, 0.8);
-            color: #2c3e50;
-            font-weight: normal;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-        
-        .role-button:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-        }
-        
-        .role-button.selected {
-            font-weight: bold;
-            color: white;
-            box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
-        }
-        </style>
-        """, unsafe_allow_html=True)
-        
-        # Create role buttons in a 3-column grid
-        cols = st.columns(3)
-        role_keys = list(role_config.keys())
-        
-        for i, role_key in enumerate(role_keys):
-            with cols[i % 3]:
-                config = role_config[role_key]
-                is_selected = st.session_state.selected_role == role_key
-                
-                if st.button(
-                    f"{config['icon']} {config['label']}",
-                    key=f"role_{role_key}_{st.session_state.get('widget_key', 'default')}",
-                    use_container_width=True,
-                    help=f"Switch to {role_key} mode",
-                    type="primary" if is_selected else "secondary"
-                ):
-                    # Check if role is changing
-                    if st.session_state.selected_role != role_key:
-                        # Always update greeting when switching roles
-                        new_chat(role_key)
-                        
-                        # Show notification about role switch
-                        st.success(f"🔄 Switched to {role_key} mode!")
-                    
-                    st.session_state.selected_role = role_key
-                    st.rerun()
-        
-        role = st.session_state.selected_role
-        
-        # System prompt with enhanced styling
-        st.markdown("#### 📝 System Instructions")
-        if role == "Default":
-            default_prompt = "You are a helpful, thoughtful, and knowledgeable assistant. Your job is to carefully analyze the user's questions, understand their underlying needs, and provide clear, accurate, and useful answers. You always ask clarifying questions if something is ambiguous, and you aim to make complex topics easy to understand. Your responses should be practical, well-structured, and tailored to the user's context whenever possible.\n\nStay professional but friendly, and ensure that your explanations are grounded in facts and logic. If a task requires multiple steps, break it down clearly. When appropriate, offer examples, comparisons, or step-by-step instructions to enhance clarity and usefulness."
-        else:
-            default_prompt = "" if role == "Custom" else ROLE_PROMPTS.get(role, "")
-        system_prompt = st.text_area(
-            "Customize AI behavior and personality",
-            value=default_prompt,
-            height=150,
-            key=f"{st.session_state.get('widget_key', 'default')}_system_prompt",
-            help="Define how the AI should behave and respond"
-        )
-        
-        # Model parameters with enhanced styling
-        st.markdown("#### ⚙️ Advanced Settings")
-        
-        with st.expander("🔧 Model Parameters", expanded=False):
-        
-            col1, col2 = st.columns(2)
-            with col1:
-                temperature = st.slider(
-                    "🌡️ Temperature",
-                    min_value=0.0,
-                    max_value=2.0,
-                    value=1.0,
-                    step=0.1,
-                    key=f"{st.session_state.get('widget_key', 'default')}_temp",
-                    help="Controls randomness: 0=focused, 2=creative"
-                )
-                top_p = st.slider(
-                    "🎯 Top-P",
-                    min_value=0.0,
-                    max_value=1.0,
-                    value=1.0,
-                    step=0.01,
-                    key=f"{st.session_state.get('widget_key', 'default')}_top_p",
-                    help="Nucleus sampling threshold"
-                )
-            
-            with col2:
-                top_k = st.slider(
-                    "🔢 Top-K",
-                    min_value=1,
-                    max_value=500,
-                    value=500,
-                    step=5,
-                    key=f"{st.session_state.get('widget_key', 'default')}_top_k",
-                    help="Limits vocabulary to top K tokens"
-                )
-                # Get model info for dynamic max tokens
-                model_info = MODELS[model_name]
-                model_max_tokens = model_info["max_tokens"]
-                
-                max_tokens = st.slider(
-                    "📊 Max Tokens",
-                    min_value=100,
-                    max_value=model_max_tokens,
-                    value=min(4096, model_max_tokens),
-                    step=100,
-                    key=f"{st.session_state.get('widget_key', 'default')}_max_tokens",
-                    help=f"Maximum response length (Model limit: {model_max_tokens:,})"
-                )
-            
-            # Current settings summary
-            st.markdown(f"""
-            <div class="parameter-section">
-                <div class="parameter-label">⚡ Current Settings</div>
-                <div class="parameter-value">
-                    🌡️ Temperature: {temperature}<br>
-                    🎯 Top-P: {top_p}<br>
-                    🔢 Top-K: {top_k}<br>
-                    📊 Max Tokens: {max_tokens:,}
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        # Action buttons with enhanced styling
-        st.markdown("---")
-        st.markdown("#### 🚀 Actions")
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("🆕 New Chat", type="primary", use_container_width=True):
-                new_chat()
-                st.rerun()
-        
-        with col2:
-            if st.button("📄 Export Chat", use_container_width=True):
-                export_chat()
-        
-    
-    return {
-        "model_name": model_name,
-        "system_prompt": system_prompt,
-        "temperature": temperature,
-        "top_p": top_p,
-        "top_k": top_k,
-        "max_tokens": max_tokens
-    }
 
 
 def extract_reasoning_and_text(input_stream):
@@ -875,15 +741,21 @@ def export_chat():
 
 def display_chat_messages():
     """Display chat messages with enhanced styling"""
-    for i, message in enumerate(st.session_state.messages):
-        with st.chat_message(message["role"]):
-            # Add message metadata for non-initial messages
-            if i > 0:  # Skip initial greeting
-                timestamp = "Just now" if i == len(st.session_state.messages) - 1 else f"Message {i}"
-                role_icon = "👤" if message["role"] == "user" else "🤖"
-                st.caption(f"{role_icon} {message['role'].title()} • {timestamp}")
-            
-            st.markdown(message["content"])
+    # Create a container for the chat messages
+    with st.container():
+        st.markdown('<div class="chat-container">', unsafe_allow_html=True)
+        
+        for i, message in enumerate(st.session_state.messages):
+            with st.chat_message(message["role"]):
+                # Add message metadata for non-initial messages
+                if i > 0:  # Skip initial greeting
+                    timestamp = "Just now" if i == len(st.session_state.messages) - 1 else f"Message {i}"
+                    role_icon = "👤" if message["role"] == "user" else "🤖"
+                    st.caption(f"{role_icon} {message['role'].title()} • {timestamp}")
+                
+                st.markdown(message["content"])
+        
+        st.markdown('</div>', unsafe_allow_html=True)
 
 
 def main():
@@ -894,37 +766,83 @@ def main():
     if "widget_key" not in st.session_state:
         st.session_state["widget_key"] = str(random.randint(1, 1000000))
     
-    # Render sidebar
-    params = render_sidebar()
-    
-    # Initialize chat model
-    chat_model = ChatModel(
-        model_name=params["model_name"],
-        model_kwargs={
-            "temperature": params["temperature"],
-            "top_p": params["top_p"],
-            "top_k": params["top_k"],
-            "max_tokens": params["max_tokens"]
-        }
-    )
-    
-    # Initialize conversation
-    conversation = init_conversation(params["system_prompt"], chat_model)
-    
-    # Display chat messages
-    display_chat_messages()
-    
-    # Enhanced user input with placeholder
-    if prompt := st.chat_input("💬 Ask me anything... (Press Enter to send)"):
-        # Store and display user message
-        store_message("user", prompt)
-        with st.chat_message("user"):
-            st.markdown(prompt)
+    # Main content area
+    with st.container():
+        # Render sidebar
+        params = render_sidebar()
         
-        # Generate and display assistant response
-        with st.chat_message("assistant"):
-            response = generate_response(conversation, prompt)
-            store_message("assistant", response)
+        # Main chat area
+        col1, col2 = st.columns([3, 1])
+        
+        with col1:
+            # Initialize chat model
+            chat_model = ChatModel(
+                model_name=params["model_name"],
+                model_kwargs={
+                    "temperature": params["temperature"],
+                    "top_p": params["top_p"],
+                    "top_k": params["top_k"],
+                    "max_tokens": params["max_tokens"]
+                }
+            )
+            
+            # Initialize conversation
+            conversation = init_conversation(params["system_prompt"], chat_model)
+            
+            # Display chat messages
+            display_chat_messages()
+            
+            # Enhanced user input with placeholder
+            if prompt := st.chat_input("💬 Ask me anything... (Press Enter to send)"):
+                # Save session before processing new message
+                if len(st.session_state.get("messages", [])) > 1:
+                    save_current_session()
+                
+                # Store and display user message
+                store_message("user", prompt)
+                with st.chat_message("user"):
+                    st.markdown(prompt)
+                
+                # Generate and display assistant response
+                with st.chat_message("assistant"):
+                    response = generate_response(conversation, prompt)
+                    store_message("assistant", response)
+        
+        with col2:
+            # Quick actions panel
+            st.markdown("### 🚀 Quick Actions")
+            
+            if st.button("💾 Save Session", use_container_width=True, type="primary"):
+                save_current_session()
+            
+            if st.button("📊 Session Stats", use_container_width=True):
+                from chat_history import get_chat_history_manager
+                manager = get_chat_history_manager()
+                stats = manager.get_session_stats()
+                
+                st.metric("Total Sessions", stats["total_sessions"])
+                st.metric("Total Messages", stats["total_messages"])
+                
+                if stats["model_usage"]:
+                    st.markdown("**Model Usage:**")
+                    for model, count in stats["model_usage"].items():
+                        st.write(f"• {model}: {count}")
+            
+            # Current session info
+            if st.session_state.get("current_session_id"):
+                st.markdown("### 📋 Current Session")
+                st.success("🟢 Session Active")
+                st.write(f"ID: {st.session_state.current_session_id[:8]}...")
+            else:
+                st.markdown("### 📋 Current Session") 
+                st.info("🔵 Unsaved Session")
+                
+            # Quick model info
+            st.markdown("### 🤖 Current Model")
+            current_model = params.get("model_name", "Unknown")
+            st.write(f"**{current_model}**")
+            st.write(f"🌡️ Temp: {params.get('temperature', 1.0)}")
+            st.write(f"📊 Max Tokens: {params.get('max_tokens', 4096):,}")
 
 
 if __name__ == "__main__":
