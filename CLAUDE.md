@@ -10,9 +10,30 @@ streamlit run app.py
 ```
 The app will be available at `http://localhost:8501`.
 
+### Environment Setup
+```bash
+# Install uv (if not installed)
+# On macOS
+brew install uv
+# OR with pip
+pip install uv
+
+# Create virtual environment with uv (using Python 3.12)
+uv venv --python=3.12
+
+# Activate the virtual environment
+source .venv/bin/activate  # On macOS/Linux
+# OR
+.venv\Scripts\activate     # On Windows
+```
+
 ### Installing Dependencies
 ```bash
-pip install -r requirements.txt
+# Install dependencies with uv (recommended)
+uv pip install -r requirements.txt
+
+# Alternative: using pip
+# pip install -r requirements.txt
 ```
 
 ### AWS Authentication
