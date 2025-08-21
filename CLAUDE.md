@@ -6,7 +6,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Running the Application
 ```bash
+# Option 1: Using streamlit directly (after activating virtual environment)
 streamlit run app.py
+
+# Option 2: Using uv run (recommended)
+uv run --python=3.9 --prerelease=allow streamlit run app.py
+
+# Option 3: Using uv run with isolated environment (no venv activation needed)
+uv run --isolated --python=3.9 --prerelease=allow streamlit run app.py
 ```
 The app will be available at `http://localhost:8501`.
 
@@ -18,8 +25,8 @@ brew install uv
 # OR with pip
 pip install uv
 
-# Create virtual environment with uv (using Python 3.12)
-uv venv --python=3.12
+# Create virtual environment with uv (using Python 3.9)
+uv venv --python=3.9
 
 # Activate the virtual environment
 source .venv/bin/activate  # On macOS/Linux

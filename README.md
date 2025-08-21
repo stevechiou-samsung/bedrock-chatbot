@@ -6,7 +6,7 @@ A streamlined chat bot based on AWS Bedrock, built with Streamlit and LangChain.
 
 ## ✨ Features
 
-- 🚀 **Multi-Model Support**: Supports Claude 3.5 Haiku, Claude 3.7 Sonnet, and Claude 4 Sonnet
+- 🚀 **Multi-Model Support**: Supports Claude 3.7 Sonnet and Claude 4 Sonnet
 - 🎭 **Role System**: Built-in role prompts (Translator, Writing Assistant, etc.)
 - ⚙️ **Adjustable Parameters**: Support for temperature, top-p, top-k, and max_tokens tuning
 - 💬 **Streaming Responses**: Real-time AI response display
@@ -18,7 +18,7 @@ A streamlined chat bot based on AWS Bedrock, built with Streamlit and LangChain.
 ### 1. Clone the project
 ```bash
 git clone <your-repo-url>
-cd simple-bedrock-chatbot
+cd bedrock-chatbot
 ```
 
 ### 2. Install uv (Python package manager)
@@ -41,31 +41,48 @@ pip install uv
 
 ### 3. Install dependencies
 
-**Option 1: Using uv (recommended)**
+**Option 1: Using uv with isolated environment (easiest, recommended)**
 ```bash
-# Create virtual environment using system Python
-uv venv
+# No need to create or activate a virtual environment
+# Run the app directly with uv (will set up everything automatically)
+uv run --isolated --python=3.9 --prerelease=allow streamlit run app.py
+```
+
+**Option 2: Using uv with virtual environment**
+```bash
+# Create virtual environment with Python 3.9
+uv venv --python=3.9
+
 # Activate the virtual environment
 source .venv/bin/activate  # On macOS/Linux
 # or
 .venv\Scripts\activate     # On Windows
+
 # Install dependencies
 uv pip install -r requirements.txt
+
+# Run the app
+streamlit run app.py
 ```
 
-**Option 2: Using pip (fallback)**
+**Option 3: Using pip (fallback)**
 ```bash
 # Create virtual environment
 python -m venv .venv
+
 # Activate the virtual environment
 source .venv/bin/activate  # On macOS/Linux
 # or
 .venv\Scripts\activate     # On Windows
+
 # Install dependencies
 pip install -r requirements.txt
+
+# Run the app
+streamlit run app.py
 ```
 
-> **Note:** If you encounter certificate or network issues with uv, use Option 2 with pip instead.
+> **Note:** The project requires Python 3.9 or newer due to langchain dependencies.
 
 ### 4. Authenticate with AWS using saml2aws
 This project assumes you use [saml2aws](https://github.com/Versent/saml2aws) (with KeyCloak or other IdP) to obtain temporary AWS credentials.
@@ -99,6 +116,17 @@ Ensure your AWS account has permissions to access Bedrock services and has enabl
 
 ## 🚀 Run the application
 
+**Option 1: Using uv run (recommended, no virtual environment activation needed)**
+```bash
+uv run --python=3.9 --prerelease=allow streamlit run app.py
+```
+
+**Option 2: Using uv run with isolated environment (easiest)**
+```bash
+uv run --isolated --python=3.9 --prerelease=allow streamlit run app.py
+```
+
+**Option 3: Using streamlit directly (after activating virtual environment)**
 ```bash
 streamlit run app.py
 ```
@@ -108,11 +136,13 @@ The application will start at `http://localhost:8501`.
 ## 📁 Project Structure
 
 ```
-simple-bedrock-chatbot/
+bedrock-chatbot/
 ├── app.py              # Main application file
 ├── models.py           # Model configurations
 ├── requirements.txt    # Python dependencies
-└── README.md           # Project documentation
+├── pyproject.toml      # Project configuration (Python >=3.9)
+├── README.md           # Project documentation
+└── CLAUDE.md           # Claude Code instructions
 ```
 
 ## 🎯 How to Use
@@ -152,8 +182,10 @@ ROLE_PROMPTS = {
 ## 📝 Notes
 
 - Make sure to use `saml2aws login` before running the app to ensure valid AWS credentials.
-- Bedrock services may have usage limits and costs
-- Recommended to use appropriate security measures in production
+- This project requires Python 3.9 or newer due to langchain dependency constraints.
+- When using uv, add the `--prerelease=allow` flag to allow pre-release packages if needed.
+- Bedrock services may have usage limits and costs.
+- Recommended to use appropriate security measures in production.
 
 ## 🤝 Contributing
 
